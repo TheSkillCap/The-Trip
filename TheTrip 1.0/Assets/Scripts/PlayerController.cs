@@ -1,31 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    // Se crea un Singleton para acceder a los elementos de esta clase en otras.
     public static PlayerController instance;
-   
-    // Variable para almacenar el componente del Input.
+
     [HideInInspector] public PlayerInput playerInput;
     private Rigidbody rb;
 
-    // Variables de velocidad.
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float sprintMultiplier = 2.0f;
+    private bool isSprinting = false;
 
     [Header("Jump Parameters")]
-    [SerializeField] private int jumpSpeed;
+    [SerializeField] private float jumpSpeed = 5f;
 
-    // las interacciones para obtener las teclas presionadas.
+    [Header("Drug Effect Controller")]
+    public DrugEffectController drugEffectController; // Asigna en el Inspector
+
     private Vector2 inputM;
     [HideInInspector] public float inputI;
-
 
     void Awake()
     {
@@ -33,57 +30,56 @@ public class PlayerController : MonoBehaviour
         {
             instance = this;
         }
+        else
+        {
+            Destroy(gameObject); // Previene múltiples instancias
+            return;
+        }
+
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
-        
     }
 
     private void Update()
     {
-        // Se relacionan las variables de los inputs con las enradas.
         inputM = playerInput.actions["Move"].ReadValue<Vector2>();
-        inputI = playerInput.actions["Interact"].ReadValue<float>(); 
-       
+        inputI = playerInput.actions["Interact"].ReadValue<float>();
     }
 
     private void FixedUpdate()
     {
-        //Llamar el método.
         Move();
     }
 
     public void Jump(InputAction.CallbackContext callbackContext)
     {
-        if (callbackContext.performed) 
+        if (callbackContext.performed && Mathf.Abs(rb.velocity.y) < 0.01f)
         {
-            // Se efectúa cuando la acción se realiza y cuando el jugador no tiene velocidad en Y.
-            if (Mathf.Abs(rb.velocity.y) < 0.01)
-            {
-                rb.AddForce(Vector3.up * jumpSpeed);
-            }
+            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.Impulse);
         }
-
     }
 
-    public void Move()
+    private void Move()
     {
-        //Se realiza el movimiento del personaje, manipulando su velocidad.
-        rb.velocity = new Vector3(inputM.x, 0, inputM.y) * moveSpeed;
+        float speed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+        rb.velocity = new Vector3(inputM.x * speed, rb.velocity.y, inputM.y * speed);
     }
 
     public void Sprint(InputAction.CallbackContext callbackContext)
     {
-        // Cambia la velocidad cuando el llamado se ejecuta.
-        if (callbackContext.performed)
-        {
-            moveSpeed *= sprintMultiplier;
-            
-        // La velocidad se reinicia ciuando se cancela la acción.
-        } else if (callbackContext.canceled)
-        {
-            moveSpeed /= sprintMultiplier;
-                
-        }
-        
+        isSprinting = callbackContext.performed;
     }
- }
+
+    private void OnCollisionEnter(Collision other) 
+    {
+        if (other.gameObject.CompareTag("CuboAumentador"))
+        {
+            if (drugEffectController != null)
+            {
+                drugEffectController.IncreaseEffects(); // Aumenta el efecto
+            }
+
+            Destroy(other.gameObject); // Destruye el cubo al tocarlo
+        }
+    }
+}
