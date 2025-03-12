@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
@@ -18,8 +19,12 @@ public class PlayerController : MonoBehaviour
     [Header("Jump Parameters")]
     [SerializeField] private float jumpSpeed = 5f;
 
-    [Header("Drug Effect Controller")]
-    public DrugEffectController drugEffectController; // Asigna en el Inspector
+    [Header("Counters")]
+    public TextMeshProUGUI ContadorHongos; // Asigna en el Inspector
+    public TextMeshProUGUI ContadorAgua; // Asigna en el Inspector
+
+    private int hongosCount = 0; // Contador de hongos
+    private int aguaCount = 0; // Contador de agua
 
     private Vector2 inputM;
     [HideInInspector] public float inputI;
@@ -74,12 +79,36 @@ public class PlayerController : MonoBehaviour
     {
         if (other.gameObject.CompareTag("CuboAumentador"))
         {
-            if (drugEffectController != null)
+            DrugEffectController.intance.IncreaseEffects(); // Aumenta el efecto
+            hongosCount++; // Incrementa el contador de hongos
+
+            if (ContadorHongos != null)
             {
-                drugEffectController.IncreaseEffects(); // Aumenta el efecto
+                ContadorHongos.text = hongosCount.ToString(); // Solo muestra el número
+            }
+            else
+            {
+                Debug.LogError("ContadorHongos no está asignado en el Inspector.");
             }
 
             Destroy(other.gameObject); // Destruye el cubo al tocarlo
+        }
+
+        if (other.gameObject.CompareTag("CuboReductor"))
+        {
+            DrugEffectController.intance.ReduceEffects(); // Reduce el efecto
+            aguaCount++; // Incrementa el contador de agua
+
+            if (ContadorAgua != null)
+            {
+                ContadorAgua.text = aguaCount.ToString(); // Solo muestra el número
+            }
+            else
+            {
+                Debug.LogError("ContadorAgua no está asignado en el Inspector.");
+            }
+
+            Destroy(other.gameObject); // Destruye el cubo al tocarlo    
         }
     }
 }
