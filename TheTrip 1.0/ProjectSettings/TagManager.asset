@@ -8,6 +8,8 @@ TagManager:
   - CuboReductor
   - contadorhongo
   - contadoragua
+  - New tag
+  - CanvasClave
   layers:
   - Default
   - TransparentFX
